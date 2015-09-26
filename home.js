@@ -51,6 +51,10 @@ var UIModule = (function(){
     }
 
     return {
+        startGame: function() {
+
+        },
+
         runTest: function(){
             _runTest();
         },

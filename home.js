@@ -10,6 +10,7 @@ var commonModule = (function(){
             this.WINDOW_WIDTH = $(window).width();
         },
         TIME_BETWEEN_ITERATIONS: 30,
+        ROW_SPEED: 3000,
         DISTANCE_BETWEEN_ROWS: 300,
         PIXEL_COUNT_INCREMENT: 10,
         IS_PAUSED: false
@@ -51,6 +52,18 @@ var UIModule = (function(){
 
         _svg.appendChild(firstLine);
         _svg.appendChild(secondLine);
+
+        return {
+            firstLine: firstLine,
+            secondLine: secondLine
+        }
+    }
+
+    function _addMovingRow(){
+        var gap = _getRandomGap();
+        var rows =  _addRowWithGap(commonModule.WINDOW_HEIGHT, gap.gapBegin, gap.gapEnd);
+        $(rows.firstLine).velocity({translateY: -commonModule.WINDOW_HEIGHT}, commonModule.ROW_SPEED, [0.5,0.5,0.5,0.5]);
+        $(rows.secondLine).velocity({translateY: -commonModule.WINDOW_HEIGHT}, commonModule.ROW_SPEED, [0.5,0.5,0.5,0.5]);
     }
 
     function _loadEvents(){
@@ -132,15 +145,16 @@ var UIModule = (function(){
     //removes line when it's no longer visible
     function _refreshLinesThatPassed(){
         $('line').each(function(){
-            var animatedonYAxis = _getYTranslationForLine(this);
-
+            var animatedOnYAxis = _getYTranslationForLine(this);
+            alert(animatedonYAxis);
             if(this.getBoundingClientRect().top + parseFloat(animatedOnYAxis) < -5){
                 $(this).remove();
 
                 if(_readLineOnLeft){
                     _readLineOnLeft = false;
                 } else {
-                    _addRow();
+                    //_addRow();
+                    _addMovingRow();
                     _incrementBallText();
                     _readLineOnLeft = true;
                 }
@@ -183,7 +197,8 @@ var UIModule = (function(){
         },
 
         addRow: function(){
-            _addRow();
+//            _addRow();
+            _addMovingRow();
         }
 
     };
@@ -215,8 +230,8 @@ var gameModule =  (function(){
         _addRows();
         setInterval(function(){
             if(commonModule.IS_PAUSED == false){
-                UIModule.iterateLines();
-                UIModule.refreshLinesThatPassed();
+                //UIModule.iterateLines();
+                //UIModule.refreshLinesThatPassed();
             }
         }, commonModule.TIME_BETWEEN_ITERATIONS);
     }
@@ -233,5 +248,6 @@ var gameModule =  (function(){
 $(document).ready(function() {
     commonModule.initialize();
     UIModule.initialize();
+//    UIModule.runTest();
     gameModule.startGame();
 });

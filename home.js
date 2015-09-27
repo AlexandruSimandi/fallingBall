@@ -10,8 +10,9 @@ var commonModule = (function(){
             this.WINDOW_WIDTH = $(window).width();
         },
         TIME_BETWEEN_ITERATIONS: 30,
-        DISTANCE_BETWEEN_ROWS: 300,
-        PIXEL_COUNT_INCREMENT: 10
+        DISTANCE_BETWEEN_ROWS: 270,
+        PIXEL_COUNT_INCREMENT: 10,
+        IS_PAUSED: false
     }
 })();
 
@@ -21,7 +22,9 @@ var UIModule = (function(){
 
     var _readLineOnLeft = true;
 
-    var _ballPosition;
+    var _ballRadius;
+
+    var _ballPosition = {};
 
     function _addRow(){
         var gap = _getRandomGap();
@@ -29,7 +32,6 @@ var UIModule = (function(){
     }
 
     function _addRowWithGap(height, gapBegin, gapEnd){
-//        alert('added a new row');
         var firstLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
         var secondLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
 
@@ -54,7 +56,16 @@ var UIModule = (function(){
     function _loadEvents(){
         $("body").mousemove(function(e){
             $("circle").velocity({translateX: e.pageX}, {queue: false, duration: 1});
-            _ballPosition = e.pageY;
+            _ballPosition.x = e.pageX;
+        });
+
+        $(window).keypress(function(e){
+            if(commonModule.IS_PAUSED){
+                commonModule.IS_PAUSED = false;
+            } else {
+                commonModule.IS_PAUSED = true;
+            }
+
         });
     }
 
@@ -68,16 +79,33 @@ var UIModule = (function(){
     function _resizeSVG(){
         var bounds = $("svg")[0].getBBox();
         $("svg").css("height", commonModule.WINDOW_HEIGHT - 10 + "px");
+        var circle = $('circle');
+        _ballPosition.y =  parseInt(circle.attr('cy'));
+        _ballRadius = parseInt(circle.attr('r'));
     }
 
     function _iterateLines(){
         $('line').velocity({translateY: '-=' + commonModule.PIXEL_COUNT_INCREMENT}, {duration: commonModule.TIME_BETWEEN_ITERATIONS, queue: false});
+        _isThereCollision();
     }
 
     function _isThereCollision(){
         var firstLine = $('line')[0];
         var secondLine = $('line')[1];
 
+        //first and second line have same values of Y position and translation
+        var firstLineYTranslation = parseInt(_getYTranslationForLine(firstLine));
+        var firstLineInitialYPosition = parseInt($(firstLine).attr('y1'));
+
+        var gap = {};
+        gap.gapBegin = parseInt($(firstLine).attr('x2'));
+        gap.gapEnd = parseInt($(secondLine).attr('x1'));
+
+        if(firstLineInitialYPosition + firstLineYTranslation < _ballPosition.y + _ballRadius + commonModule.PIXEL_COUNT_INCREMENT){
+            if((_ballPosition.x - _ballRadius) < gap.gapBegin || (_ballPosition.x + _ballRadius) > gap.gapEnd){
+                commonModule.IS_PAUSED = true;
+            }
+        }
 
     }
 
@@ -90,12 +118,16 @@ var UIModule = (function(){
         }
     }
 
+    function _getYTranslationForLine(line){
+        var value = $(line).css('transform');
+        var matrix = value.match(/[0-9., -]+/)[0].split(", ");
+        return animatedOnYAxis = matrix[5];
+    }
+
     //removes line when it's no longer visible
     function _refreshLinesThatPassed(){
         $('line').each(function(){
-            var value = $(this).css('transform');
-            var matrix = value.match(/[0-9., -]+/)[0].split(", ");
-            var animatedOnYAxis = matrix[5];
+            var animatedonYAxis = _getYTranslationForLine(this);
 
             if(this.getBoundingClientRect().top + parseFloat(animatedOnYAxis) < -5){
                 $(this).remove();
@@ -132,7 +164,6 @@ var UIModule = (function(){
             _addRow();
         }
 
-
     };
 })();
 
@@ -142,10 +173,13 @@ var gameModule =  (function(){
 
     var _interval;
     var _numberOfRows
+    var _offset;
 
     function _addRows() {
         var intervalDuration = (commonModule.DISTANCE_BETWEEN_ROWS / commonModule.PIXEL_COUNT_INCREMENT) * commonModule.TIME_BETWEEN_ITERATIONS;
         var _numberOfRows = commonModule.WINDOW_HEIGHT / commonModule.DISTANCE_BETWEEN_ROWS;
+        _offset = commonModule.WINDOW_HEIGHT - parseInt(_numberOfRows) * commonModule.DISTANCE_BETWEEN_ROWS;
+        //alert(_offset);
         _interval = setInterval(function(){
             UIModule.addRow();
             _numberOfRows--;
@@ -158,9 +192,10 @@ var gameModule =  (function(){
     function _startGame() {
         _addRows();
         setInterval(function(){
-            UIModule.iterateLines();
-            UIModule.refreshLinesThatPassed();
-
+            if(commonModule.IS_PAUSED == false){
+                UIModule.iterateLines();
+                UIModule.refreshLinesThatPassed();
+            }
         }, commonModule.TIME_BETWEEN_ITERATIONS);
     }
 
@@ -173,7 +208,7 @@ var gameModule =  (function(){
 })();
 
 
-$(document).ready(function(){
+$(document).ready(function() {
     commonModule.initialize();
     UIModule.initialize();
     //UIModule.runTest();

@@ -10,7 +10,7 @@ var commonModule = (function(){
             this.WINDOW_WIDTH = $(window).width();
         },
         TIME_BETWEEN_ITERATIONS: 30,
-        DISTANCE_BETWEEN_ROWS: 270,
+        DISTANCE_BETWEEN_ROWS: 300,
         PIXEL_COUNT_INCREMENT: 10,
         IS_PAUSED: false
     }
@@ -20,10 +20,12 @@ var UIModule = (function(){
 
     var GAP_WIDTH = 200;
 
+    var _svg;
+
     var _readLineOnLeft = true;
 
+    var _ballText;
     var _ballRadius;
-
     var _ballPosition = {};
 
     function _addRow(){
@@ -47,16 +49,15 @@ var UIModule = (function(){
         secondLine.setAttribute("y2", height);
         secondLine.setAttribute("style", "stroke:rgb(0,0,0);stroke-width:6");
 
-        var svg = document.getElementById('screen');
-
-        svg.appendChild(firstLine);
-        svg.appendChild(secondLine);
+        _svg.appendChild(firstLine);
+        _svg.appendChild(secondLine);
     }
 
     function _loadEvents(){
         $("body").mousemove(function(e){
             $("circle").velocity({translateX: e.pageX}, {queue: false, duration: 1});
             _ballPosition.x = e.pageX;
+            $('text').velocity({translateX: e.pageX - 5}, {queue: false, duration: 1});
         });
 
         $(window).keypress(function(e){
@@ -82,6 +83,7 @@ var UIModule = (function(){
         var circle = $('circle');
         _ballPosition.y =  parseInt(circle.attr('cy'));
         _ballRadius = parseInt(circle.attr('r'));
+        _svg = document.getElementById('screen');
     }
 
     function _iterateLines(){
@@ -103,7 +105,10 @@ var UIModule = (function(){
 
         if(firstLineInitialYPosition + firstLineYTranslation < _ballPosition.y + _ballRadius + commonModule.PIXEL_COUNT_INCREMENT){
             if((_ballPosition.x - _ballRadius) < gap.gapBegin || (_ballPosition.x + _ballRadius) > gap.gapEnd){
-                commonModule.IS_PAUSED = true;
+                if(firstLineInitialYPosition + firstLineYTranslation > _ballPosition.y - _ballRadius + commonModule.PIXEL_COUNT_INCREMENT){
+                    commonModule.IS_PAUSED = true;
+                    ballText.innerHTML = '0';
+                }
             }
         }
 
@@ -136,10 +141,26 @@ var UIModule = (function(){
                     _readLineOnLeft = false;
                 } else {
                     _addRow();
+                    _incrementBallText();
                     _readLineOnLeft = true;
                 }
             }
         });
+    }
+
+    function _loadBallText(){
+        ballText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        ballText.setAttribute('x', 0);
+        ballText.setAttribute('y', _ballPosition.y + 5);
+        ballText.setAttribute('fill', 'white');
+        ballText.setAttribute('font-size', '20px');
+        ballText.innerHTML = '0';
+
+        _svg.appendChild(ballText);
+    }
+
+    function _incrementBallText(){
+        ballText.innerHTML = parseInt(ballText.innerHTML) + 1;
     }
 
     return {
@@ -150,6 +171,7 @@ var UIModule = (function(){
         initialize: function(){
             _resizeSVG();
             _loadEvents();
+            _loadBallText();
         },
 
         iterateLines: function(){
@@ -211,6 +233,5 @@ var gameModule =  (function(){
 $(document).ready(function() {
     commonModule.initialize();
     UIModule.initialize();
-    //UIModule.runTest();
     gameModule.startGame();
 });

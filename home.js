@@ -61,9 +61,9 @@ var UIModule = (function(){
 
     function _addMovingRow(){
         var gap = _getRandomGap();
-        var rows =  _addRowWithGap(commonModule.WINDOW_HEIGHT, gap.gapBegin, gap.gapEnd);
-        $(rows.firstLine).velocity({translateY: -commonModule.WINDOW_HEIGHT}, commonModule.ROW_SPEED, [0.5,0.5,0.5,0.5]);
-        $(rows.secondLine).velocity({translateY: -commonModule.WINDOW_HEIGHT}, commonModule.ROW_SPEED, [0.5,0.5,0.5,0.5]);
+        var rows =  _addRowWithGap(commonModule.WINDOW_HEIGHT + 10, gap.gapBegin, gap.gapEnd);
+        $(rows.firstLine).velocity({translateY: - commonModule.WINDOW_HEIGHT - 20}, commonModule.ROW_SPEED, [0.5,0.5,0.5,0.5]);
+        $(rows.secondLine).velocity({translateY: - commonModule.WINDOW_HEIGHT - 20}, commonModule.ROW_SPEED, [0.5,0.5,0.5,0.5]);
     }
 
     function _loadEvents(){
@@ -105,8 +105,9 @@ var UIModule = (function(){
     }
 
     function _isThereCollision(){
-        var firstLine = $('line')[0];
-        var secondLine = $('line')[1];
+        var lines = $('line');
+        var firstLine = lines[0];
+        var secondLine = lines[1];
 
         //first and second line have same values of Y position and translation
         var firstLineYTranslation = parseInt(_getYTranslationForLine(firstLine));
@@ -119,7 +120,7 @@ var UIModule = (function(){
         if(firstLineInitialYPosition + firstLineYTranslation < _ballPosition.y + _ballRadius + commonModule.PIXEL_COUNT_INCREMENT){
             if((_ballPosition.x - _ballRadius) < gap.gapBegin || (_ballPosition.x + _ballRadius) > gap.gapEnd){
                 if(firstLineInitialYPosition + firstLineYTranslation > _ballPosition.y - _ballRadius + commonModule.PIXEL_COUNT_INCREMENT){
-                    commonModule.IS_PAUSED = true;
+                    //commonModule.IS_PAUSED = true;
                     ballText.innerHTML = '0';
                 }
             }
@@ -144,6 +145,20 @@ var UIModule = (function(){
 
     //removes line when it's no longer visible
     function _refreshLinesThatPassed(){
+        var lines = $('line');
+        var line1 = lines[0];
+        var line2 = lines[1];
+
+        var animatedOnYAxis = _getYTranslationForLine(line1);
+        if(line1.getBoundingClientRect().top + parseFloat(animatedOnYAxis) < -10){
+            $(line1).remove();
+            $(line2).remove();
+
+            _addMovingRow();
+            _incrementBallText();
+        }
+
+        /*
         $('line').each(function(){
             var animatedOnYAxis = _getYTranslationForLine(this);
             alert(animatedonYAxis);
@@ -160,6 +175,7 @@ var UIModule = (function(){
                 }
             }
         });
+        */
     }
 
     function _loadBallText(){
@@ -199,6 +215,10 @@ var UIModule = (function(){
         addRow: function(){
 //            _addRow();
             _addMovingRow();
+        },
+
+        isThereCollision: function(){
+            _isThereCollision();
         }
 
     };
@@ -220,7 +240,7 @@ var gameModule =  (function(){
         _interval = setInterval(function(){
             UIModule.addRow();
             _numberOfRows--;
-            if(_numberOfRows < 0){
+            if(_numberOfRows <= 1){
                 clearInterval(_interval);
             }
         }, intervalDuration);
@@ -231,7 +251,8 @@ var gameModule =  (function(){
         setInterval(function(){
             if(commonModule.IS_PAUSED == false){
                 //UIModule.iterateLines();
-                //UIModule.refreshLinesThatPassed();
+                UIModule.refreshLinesThatPassed();
+                UIModule.isThereCollision();
             }
         }, commonModule.TIME_BETWEEN_ITERATIONS);
     }

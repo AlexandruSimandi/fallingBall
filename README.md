@@ -5,7 +5,7 @@ I am going for something like this
 * http://www.addictinggames.com/action-games/falldown2.jsp
 
 Known bugs:
-* total game failure on chrome, loop does not continue, also half the svg animations do not work
+* total game failure on chrome, loop does not continue, svg misbehaves and lines are not appended
 * depending on the height of the window, sometimes the lines can get really really close, REALLY REALLY CLOSE
 * on pausing and unpausing the game (by pressing any key) the lines have tendency to get grouped
 
@@ -15,3 +15,4 @@ Todo:
 * join the dark side
 * pause game when changing tabs or windows (will look more into this)
 * in future versions add difficulty, challenges or gradual increase in speed with time
+* the dark side joke gave me the idea of adding day/night theme
